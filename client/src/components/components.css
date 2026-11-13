@@ -1,0 +1,360 @@
+/* Amount: big whole part, small muted cents */
+.amount {
+  display: inline-flex;
+  align-items: baseline;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tight like a wallet balance: "$" touches the number, "LBP" keeps a thin space */
+.amount__symbol {
+  margin-right: 0.04em;
+  font-weight: 600;
+}
+
+.amount__symbol--word {
+  margin-right: 0.14em;
+}
+
+.amount__fraction {
+  /* The dot's own side bearing leaves a gap after the whole number: pull it in */
+  margin-left: -0.06em;
+  font-size: 0.55em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--amount-muted, var(--night-muted));
+}
+
+.amount--hero {
+  font-size: var(--text-amount);
+}
+
+/* Avatars */
+.avatars {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 0.4rem;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: -0.4rem;
+  border: 2px solid var(--avatar-ring, var(--day));
+  border-radius: 50%;
+  background: oklch(0.86 0.09 var(--hue, 124));
+  color: oklch(0.25 0.04 var(--hue, 124));
+  font-size: 0.625rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  transition: border-color var(--dur-base) var(--ease-out);
+}
+
+.avatar--more {
+  background: var(--day-sunken);
+  color: var(--ink-muted);
+}
+
+/* Stepper: a 36px pill whose buttons keep a 44px hit area */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background: var(--day);
+  box-shadow: inset 0 0 0 1px var(--day-line);
+}
+
+.stepper__button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  touch-action: manipulation;
+  transition: transform var(--dur-press) ease-out;
+}
+
+.stepper__button:active:not(:disabled) {
+  transform: scale(0.88);
+}
+
+.stepper__button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.stepper__count {
+  display: grid;
+  min-width: 1.25rem;
+  justify-items: center;
+  font-size: var(--text-label);
+  font-weight: 700;
+}
+
+/* Wallet app logos, all in the same rounded tile */
+.wallet-logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  width: var(--size, 40px);
+  height: var(--size, 40px);
+  border-radius: 24%;
+  background: var(--day-sunken);
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.06);
+}
+
+.wallet-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The Whish file has a white border around its icon: crop it off. */
+.wallet-logo--whish img {
+  transform: scale(1.12);
+}
+
+.wallet-logo--cash {
+  background: var(--wallet-cash);
+  color: var(--wallet-cash-ink);
+}
+
+/* Bottom sheet */
+.sheet-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* Not a scroll container (the browser's own style for a modal dialog is overflow:
+     auto, and even hidden still scrolls): when showModal() focused a button on the
+     panel while it was below the screen, the dialog scrolled and the sheet jumped up.
+     Visible, not clip, so the panel's white extension below can show (see below). */
+  overflow: visible;
+}
+
+/* White under the sheet's bottom edge. Normally off screen; when the iPhone keyboard
+   opens, Safari shifts the page up to keep the field in view, and this keeps the
+   page's text from showing through behind the see-through keyboard. */
+.sheet-panel::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: 100vh;
+  background: var(--day);
+  pointer-events: none;
+}
+
+/*
+ * iPhone Safari (iOS 26) colors its status bar from the fixed element at the top edge,
+ * and the see-through scrim showed as a solid black bar over the dimmed page. Under the
+ * status bar we paint the dimmed page color solid instead (Sheet.jsx sets --under to the
+ * page color there), which looks the same as the scrim and gives Safari a color to use.
+ */
+.sheet-status-bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: env(safe-area-inset-top);
+  background-color: color-mix(in srgb, var(--under, black) 50%, black);
+}
+
+.sheet-panel:focus {
+  outline: none;
+}
+
+.sheet-dialog::backdrop {
+  background: transparent;
+}
+
+.sheet-scrim {
+  position: absolute;
+  inset: 0;
+  background: oklch(0 0 0 / 0.5);
+  animation: sheet-fade-in var(--sheet-time) var(--sheet-ease);
+}
+
+/* Closing: the dim fades faster than the panel travels, so the page is clear first */
+.sheet-dialog.is-closing .sheet-scrim {
+  animation: sheet-fade-out var(--dur-fast) ease-out forwards;
+}
+
+/*
+ * The sheet's motion (Session 6: transitions and keyframes). No bounce: the curve
+ * starts fast and settles gently, like iOS sheets.
+ * Opening: slide up from below. Closing: slide back down (from wherever a drag left it).
+ * Letting go of a short drag: the transition brings it back up.
+ */
+.sheet-dialog {
+  --sheet-time: 0.4s;
+  --sheet-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes sheet-down {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes sheet-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.sheet-panel {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, var(--column));
+  max-height: 92dvh;
+  margin-inline: auto;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--day);
+  color: var(--ink);
+  box-shadow: 0 -8px 40px oklch(0 0 0 / 0.3);
+  animation: sheet-up var(--sheet-time) var(--sheet-ease);
+  transition:
+    transform 0.3s var(--sheet-ease),
+    box-shadow var(--dur-fast) ease-out;
+}
+
+/* Following the finger: no transition, or it would lag behind */
+.sheet-panel.is-dragging {
+  transition: none;
+}
+
+/* Its upward shadow fades with the dim, so no dark band lingers over the page */
+.sheet-panel.is-closing {
+  animation: sheet-down var(--sheet-time) var(--sheet-ease) forwards;
+  box-shadow: 0 -8px 40px oklch(0 0 0 / 0);
+}
+
+.sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-sm) 0 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.sheet-handle span {
+  width: 2.25rem;
+  height: 0.3125rem;
+  border-radius: var(--radius-pill);
+  background: var(--day-line);
+}
+
+.sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--gutter) 0;
+  touch-action: none;
+}
+
+/* A long title wraps; the close button keeps its round 44 px */
+.sheet-header .pill--icon {
+  flex: none;
+}
+
+.sheet-title {
+  font-size: var(--text-title);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.sheet-description {
+  margin-top: var(--space-xs);
+  font-size: var(--text-label);
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+.sheet-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-xl) var(--gutter) var(--space-lg);
+}
+
+.sheet-footer {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--gutter) calc(var(--space-lg) + env(safe-area-inset-bottom));
+}
+
+/* The count pops in when it changes (the key changes, so the animation replays) */
+.stepper__value {
+  animation: stepper-pop var(--dur-base) cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes stepper-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* Long amounts get smaller to fit the column: about 0.62em per character */
+.amount__fit {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: min(1em, calc((min(100vw, var(--column)) - 2 * var(--gutter)) / (var(--chars, 1) * 0.62)));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepper__button {
+    transition: none;
+  }
+
+  .stepper__value {
+    animation: none;
+  }
+
+  /* Sheets fade instead of sliding */
+  .sheet-panel {
+    animation-name: sheet-fade-in;
+  }
+
+  .sheet-panel.is-closing {
+    animation-name: sheet-fade-out;
+  }
+}

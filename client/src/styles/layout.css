@@ -1,0 +1,281 @@
+/* The splIT screen: a dark top, a white sheet over it, a docked action bar. */
+.screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  /* When Safari's bars collapse on scroll, the viewport grows past 100dvh for a moment:
+     paint the screen's own white below it so no black gap shows. Doesn't add scroll. */
+  box-shadow: 0 100vh 0 0 var(--day);
+  max-width: var(--column);
+  margin-inline: auto;
+  background: var(--day);
+  color: var(--night-ink);
+}
+
+.top {
+  position: relative;
+  background: var(--night);
+  padding: calc(env(safe-area-inset-top) + var(--space-md)) var(--gutter) calc(2.5rem + var(--radius-sheet));
+  overflow: hidden;
+}
+
+.top__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  min-height: 44px;
+}
+
+/* The sheet slides up under the dark top's last 28px, so its rounded corners show black, not the white page. */
+.surface {
+  position: relative;
+  flex: 1;
+  margin-top: calc(var(--radius-sheet) * -1);
+  padding: var(--space-sm) var(--gutter) var(--space-xl);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  /* Full-width row highlights (pressed, claimed) follow the rounded corners instead of poking past them */
+  overflow: clip;
+  background: var(--day);
+  color: var(--ink);
+  box-shadow: 0 -12px 40px oklch(0 0 0 / 0.35);
+}
+
+.surface__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-lg) 0 var(--space-sm);
+}
+
+.surface__title {
+  font-size: 1.5rem; /* between heading and title: section names lead their list */
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.surface__meta {
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+/*
+ * Docked action bar. Part of the page (last in .screen) and sticky, so it sits at the
+ * bottom of short screens, stays in view on long ones, and needs no reserved space.
+ * Solid white: iPhone Safari tints its bottom toolbar from a solid element at the
+ * bottom edge, and skips translucent ones (it would show black).
+ */
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-dock);
+  padding: var(--space-md) var(--gutter) calc(var(--space-md) + env(safe-area-inset-bottom));
+  background: var(--day);
+  color: var(--ink);
+}
+
+/*
+ * An empty dock: a short solid white bar for screens with nothing to dock yet. The
+ * toolbar-tint strip below then sits on it, so content scrolls under a clean bottom
+ * edge instead of being crossed by a thin white line (seen on iPhone with a 2px bar).
+ */
+.dock--empty {
+  height: calc(var(--space-lg) + env(safe-area-inset-bottom));
+  padding: 0;
+}
+
+/*
+ * A fixed white layer behind the bottom half of light screens. When iPhone Safari
+ * bounces past the end, the page slides up but this stays put, so the gap is white
+ * instead of the black body.
+ */
+.screen::before {
+  content: '';
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  height: 50vh;
+  background: var(--day);
+  pointer-events: none;
+}
+
+/* Light screens without a dock still give Safari a solid white edge to tint its toolbar from. */
+.screen::after {
+  content: '';
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--day);
+  pointer-events: none;
+}
+
+/* Toasts sit just above the dock */
+.toast-region {
+  position: fixed;
+  bottom: calc(7.5rem + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: var(--z-toast);
+  width: min(calc(100% - 2 * var(--gutter)), calc(var(--column) - 2 * var(--gutter)));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* A floating pill as wide as its message, see-through over a blur of what's behind
+   (floating chrome is the one place translucency is allowed, CLAUDE.md) */
+.toast {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: var(--space-md) var(--space-xl);
+  border-radius: 24px; /* a full pill on one line, still soft on two */
+  background: oklch(0.13 0 0 / 0.78);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+  color: var(--night-ink);
+  font-size: var(--text-label);
+  font-weight: 500;
+  text-align: center;
+  text-wrap: balance;
+  box-shadow: 0 8px 28px oklch(0 0 0 / 0.2);
+  animation: toast-in var(--dur-base) var(--ease-out);
+}
+
+/* Slides down and fades away (components/Toast.jsx removes it right after) */
+.toast.is-leaving {
+  animation: toast-out var(--dur-base) var(--ease-out) forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast.is-leaving {
+    animation-name: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .toast {
+    background: var(--night);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Loading spinner (components/Loading.jsx): a lime arc on a faint ring. Shows after
+   0.3 s, so a fast load doesn't flash it. */
+.spinner {
+  display: block;
+  width: var(--spinner-size, 36px);
+  height: var(--spinner-size, 36px);
+  margin-inline: auto;
+  border: 3px solid oklch(1 0 0 / 0.12);
+  border-top-color: var(--lime);
+  border-radius: 50%;
+  opacity: 0;
+  animation:
+    spinner-in 0.2s ease-out 0.3s forwards,
+    spinner-turn 0.8s linear infinite;
+}
+
+@keyframes spinner-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spinner-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Reduced motion: no spinning; the ring breathes slowly instead */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    border-color: var(--lime);
+    animation:
+      spinner-in 0.2s ease-out 0.3s forwards,
+      spinner-breathe 1.6s ease-in-out 0.5s infinite;
+  }
+
+  @keyframes spinner-breathe {
+    50% {
+      opacity: 0.4;
+    }
+  }
+}
+
+/* Full-screen states: loading, missing, offline */
+.state {
+  display: grid;
+  place-content: center;
+  gap: var(--space-lg);
+  min-height: 100dvh;
+  max-width: var(--column);
+  margin-inline: auto;
+  padding: var(--space-3xl) var(--gutter);
+  background: var(--night);
+  box-shadow: 0 100vh 0 0 var(--night);
+  color: var(--night-ink);
+  text-align: center;
+}
+
+.state__title {
+  font-size: var(--text-title);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.state__text {
+  color: var(--night-muted);
+  text-wrap: pretty;
+}
+
+.state__actions {
+  display: grid;
+  gap: var(--space-sm);
+  width: min(100%, 20rem);
+  margin: var(--space-sm) auto 0;
+}
+
+/* Skeleton blocks for loading */
+.skeleton {
+  border-radius: 10px;
+  background: var(--night-raised);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.surface .skeleton {
+  background: var(--day-sunken);
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

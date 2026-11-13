@@ -1,0 +1,50 @@
+﻿.auth .top {
+  padding-bottom: calc(2.25rem + var(--radius-sheet));
+}
+
+.auth .wordmark {
+  text-decoration: none;
+}
+
+.auth__heading {
+  margin-top: var(--space-xl);
+}
+
+.auth__title {
+  font-size: 2.75rem;
+  font-weight: 750;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.auth .surface {
+  padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom));
+}
+
+.auth-form {
+  display: grid;
+  gap: var(--space-lg);
+  padding-top: var(--space-lg);
+}
+
+/* Sit close under the field it's about: the form's 16px gap minus 10px */
+.auth-form .form-error {
+  margin-top: -10px;
+}
+
+.auth-form .pill--primary {
+  margin-top: var(--space-sm);
+}
+
+.auth__switch {
+  margin-top: var(--space-md);
+  font-size: var(--text-label);
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.auth__switch a {
+  color: var(--lime-deep);
+  font-weight: 650;
+  text-underline-offset: 2px;
+}
